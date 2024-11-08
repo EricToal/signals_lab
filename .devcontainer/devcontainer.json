@@ -14,8 +14,8 @@
         "GitHub.copilot",
         "GitHub.copilot-chat",
         "BenjaminBenais.copilot-theme"
-      ]
+      ],
+      "postCreateCommand": "pip install -r requirements.txt"
     }
-  },
-  "forwardPorts": [8000]
+  }
 }
