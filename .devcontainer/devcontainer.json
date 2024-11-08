@@ -1,0 +1,21 @@
+{
+  "name": "dd_experiments",
+  "build": { "dockerfile": "Dockerfile" },
+  "customizations": {
+    "vscode": {
+      "settings": { 
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "python.defaultInterpreterPath": "/opt/venv/bin/python"
+       },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "BenjaminBenais.copilot-theme"
+      ]
+    }
+  },
+  "forwardPorts": [8000]
+}
