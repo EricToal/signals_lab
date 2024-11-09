@@ -16,7 +16,7 @@ class EEGProcessor:
     '''
     def __init__(self, config: EEGConfig, expansion_factor: int = 1):
         self.config = config
-        self.data = self.config.dataset.get_data(subjects = self.config.get_subject_range())
+        self.data = self.config.dataset.get_data(subjects = [i for i in self.config.get_subject_range()])
     
     def process_data(self):
         '''

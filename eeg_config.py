@@ -11,16 +11,14 @@ class EEGConfig:
     Using the EEGProcessor class and its Combined form.
     '''
     dataset: object
-    eeg_dim = 512
+    channel_range: Tuple[str, str]
     num_channels: int
+    eeg_dim = 512
     target_num_channels = 128
     expansion_factor = 1
-    
-    # These are tuples containing the high/low
-    # or start/end of a range of values.
     subject_range: Tuple[int, int] = (1, 1)
     filter_range: Tuple[int, int] = (5, 95)
-    channel_range: Tuple[str, str]
+
     
     def __post_init__(self):
         # We cannot simply assign because object is immutable.

@@ -14,7 +14,9 @@
         "ms-python.debugpy",
         "GitHub.copilot",
         "GitHub.copilot-chat",
-        "BenjaminBenais.copilot-theme"
+        "BenjaminBenais.copilot-theme",
+        "ms-toolsai.jupyter-hub",
+        "ms-toolsai.jupyter"
       ],
       "postCreateCommand": "pip install -r requirements.txt"
     }
