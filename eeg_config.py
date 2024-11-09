@@ -7,23 +7,13 @@ from typing import Tuple, List
 @dataclass(frozen=True)
 class EEGConfig:
     dataset: object
-    eeg_dim = 512
+    eeg_dim: 512
+    num_channels: int
+    target_num_channels: 128
     subject_range: Tuple[int, int]
     session_range: Tuple[int, int]
     filter_range: Tuple[int, int] = (5, 95)
-    channel_range: Tuple[str, str] = ('Fp1', 'PO10')
-    
-    def __post_init__(self):
-        # We use this over simple assignment because this is an
-        # immutable object.
-        object.__setattr__(self, 'num_channels',
-                           self.channel_range[1] - self.channel_range[0]
-                           )
+    channel_range: Tuple[str, str]
         
-    def get_range(self, type: str) -> List[int]:
-        if type == 'subjects':
-            return range(self.subject_range[0], self.subject_range[1] + 1)
-        elif type == 'sessions':
-            return range(self.session_range[0], self.session_range[1] + 1)
-        else:
-            raise ValueError(f"Invalid type: {type}")
+    def get_subject_range(self):
+        return range(self.subject_range[0], self.subject_range[1] + 1)

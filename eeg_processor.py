@@ -1,10 +1,11 @@
 from eeg_config import EEGConfig
 import numpy as np
+import torch
 
 class EEGProcessor:
-    def __init__(self, config: EEGConfig):
+    def __init__(self, config: EEGConfig, expansion_factor: int = 1):
         self.config = config
-        self.data = self.config.dataset.get_data(subjects = self.config.get_range('subjects'))
+        self.data = self.config.dataset.get_data(subjects = self.config.get_subject_range())
     
     def process_data(self):
         '''
@@ -23,17 +24,22 @@ class EEGProcessor:
                         yield self._process_segment(segment)
                         
     def _filter_data(self, raw_data):
-        # Stub for filtering data
-        pass
+        return raw_data \
+            .filter(self.config.filter_range[0], self.config.filter_range[1], verbose=0) \
+            .to_data_frame() \
+            .astype(np.float32)
 
     def _extract_channels(self, filtered_data):
-        # Stub for extracting channels
-        pass
+        return filtered_data \
+            .loc[:, self.config.channel_range[0]:self.config.channel_range[1]] \
+            .values
 
     def _reshape_data(self, extracted_channels):
-        # Stub for reshaping data
-        pass
+        eeg_dim = self.config.eeg_dim
+        num_chunks = extracted_channels.shape[0] // self.config.eeg_dim
+        
+        return extracted_channels[:num_chunks * eeg_dim] \
+            .reshape(-1, eeg_dim, self.config.num_channels)
 
     def _process_segment(self, segment):
-        # Stub for processing segment
-        pass
+        eeg = torch.Tensor(segment).repeat(1, self.expansion_factor)
