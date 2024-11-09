@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, List
 
 # We want this to be immutable so that it can't be
 # accidentally re-used and modified in a way that
@@ -16,11 +16,14 @@ class EEGConfig:
     def __post_init__(self):
         # We use this over simple assignment because this is an
         # immutable object.
-        object.__setattr__(self, 'dataset',
-                           self
-                           .dataset
-                           .get_data(subjects = [range(self.subject_range[0], self.subject_range[1] + 1)])
-                           )
         object.__setattr__(self, 'num_channels',
                            self.channel_range[1] - self.channel_range[0]
                            )
+        
+    def get_range(self, type: str) -> List[int]:
+        if type == 'subjects':
+            return range(self.subject_range[0], self.subject_range[1] + 1)
+        elif type == 'sessions':
+            return range(self.session_range[0], self.session_range[1] + 1)
+        else:
+            raise ValueError(f"Invalid type: {type}")
