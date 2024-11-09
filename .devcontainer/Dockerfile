@@ -2,8 +2,9 @@ FROM python:3.12-slim
 
 # Install git
 RUN apt-get update && \ 
-    apt-get upgrade -y && \
     apt-get install git -y && \
+    apt-get install gcc -y && \
+    apt-get install g++ -y && \
     apt-get clean
 
 RUN python3 -m venv /opt/venv

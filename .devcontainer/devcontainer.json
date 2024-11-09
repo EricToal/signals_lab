@@ -1,6 +1,7 @@
 {
   "name": "dd_experiments",
   "build": { "dockerfile": "Dockerfile" },
+  "workspaceFolder": "/workspaces/dd_experiments",
   "customizations": {
     "vscode": {
       "settings": { 
