@@ -90,4 +90,4 @@ class EEGProcessor:
         Returns:
             A tensor containing the processed EEG data segment.
             '''
-        return torch.Tensor(segment).repeat(1, self.expansion_factor).unsqueeze(0)
+        return torch.Tensor(segment).repeat(1, self.config.expansion_factor).unsqueeze(0)

@@ -14,6 +14,7 @@ class EEGConfig:
     eeg_dim = 512
     num_channels: int
     target_num_channels = 128
+    expansion_factor = 1
     
     # These are tuples containing the high/low
     # or start/end of a range of values.
@@ -21,6 +22,12 @@ class EEGConfig:
     session_range: Tuple[int, int]
     filter_range: Tuple[int, int] = (5, 95)
     channel_range: Tuple[str, str]
+    
+    def __post_init__(self):
+        # We cannot simply assign because object is immutable.
+        object.__setattr__(self, 'expansion_factor',
+                           self.target_num_channels // self.num_channels
+                           )
         
     def get_subject_range(self):
         return range(self.subject_range[0], self.subject_range[1] + 1)
