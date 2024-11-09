@@ -18,8 +18,7 @@ class EEGConfig:
     
     # These are tuples containing the high/low
     # or start/end of a range of values.
-    subject_range: Tuple[int, int]
-    session_range: Tuple[int, int]
+    subject_range: Tuple[int, int] = (1, 1)
     filter_range: Tuple[int, int] = (5, 95)
     channel_range: Tuple[str, str]
     

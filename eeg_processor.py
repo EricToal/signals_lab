@@ -25,6 +25,9 @@ class EEGProcessor:
         Returns: A generator that yields processed EEG data.
         '''
         for subject_id, sessions in self.data.items():
+            # Allow for early stopping so that we can limit range of subjects.
+            if subject_id not in range(self.config.subject_range[0], self.config.subject_range[1] + 1):
+                break
             for session_id, runs in sessions.items():
                 for run_id, raw_data in runs.items():
                     filtered_data = self._filter_data(raw_data)
