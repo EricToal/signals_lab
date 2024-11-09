@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from typing import Tuple, Dict
+from dataclasses import dataclass
+from typing import Tuple
 
 # We want this to be immutable so that it can't be
 # accidentally re-used and modified in a way that
