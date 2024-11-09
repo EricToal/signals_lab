@@ -21,3 +21,6 @@ class EEGConfig:
                            .dataset
                            .get_data(subjects = [range(self.subject_range[0], self.subject_range[1] + 1)])
                            )
+        object.__setattr__(self, 'num_channels',
+                           self.channel_range[1] - self.channel_range[0]
+                           )
