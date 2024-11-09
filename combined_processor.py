@@ -2,6 +2,7 @@ from eeg_config import EEGConfig
 from eeg_processor import EEGProcessor
 
 from torch.utils.data import Dataset
+import torch
 from typing import List
 from itertools import chain
 
@@ -19,6 +20,26 @@ class CombinedProcessor(Dataset):
     def __init__(self, configs: List[EEGConfig]):
         self.processors = [EEGProcessor(config) for config in configs]
         self.segment_iterator = self._create_segment_iterator()
+        self.dir = './'
+        self.filename = 'complete_dataset_tensor.pth'
+        
+    def stack_data(self):
+        '''
+        This method stacks all processed EEG data into a single tensor.
+        
+        Returns: A tensor containing all processed EEG data.
+        '''
+        return torch.vstack(list(self.segment_iterator))
+    
+    def save_data(self, path):
+        '''
+        This method saves all processed EEG data to a file.
+        
+        Args:
+            path: The file path to save the stacked tensors to.
+        '''
+        path = path if path else self.dir + self.filename
+        torch.save(self.stack_data(), path)
         
     def _create_segment_iterator(self):
         '''
