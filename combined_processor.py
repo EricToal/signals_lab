@@ -5,6 +5,9 @@ from torch.utils.data import Dataset
 import torch
 from typing import List
 from itertools import chain
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(name)s - %(message)s')
 
 class CombinedProcessor(Dataset):
     '''
@@ -17,7 +20,12 @@ class CombinedProcessor(Dataset):
         processors: A list of EEGProcessor objects.
         segment_iterator: An iterator that yields segments from the processor generators.
     '''
-    def __init__(self, configs: List[EEGConfig]):
+    def __init__(self, configs: List[EEGConfig], debug: bool = False):
+        if debug:
+            logging.basicConfig(level=logging.DEBUG)
+        self.logger = logging.getLogger(__name__)
+        self.logger.debug('Creating CombinedProcessor and populating fields.')
+
         self.processors = [EEGProcessor(config) for config in configs]
         self.segment_iterator = self._create_segment_iterator()
         self.dir = './'
@@ -29,6 +37,7 @@ class CombinedProcessor(Dataset):
         
         Returns: A tensor containing all processed EEG data.
         '''
+        self.logger.debug('Stacking all processed EEG data.')
         return torch.vstack(list(self.segment_iterator))
     
     def save_data(self, path):
@@ -39,6 +48,7 @@ class CombinedProcessor(Dataset):
             path: The file path to save the stacked tensors to.
         '''
         path = path if path else self.dir + self.filename
+        self.logger.debug(f'Saving data to {path}.')
         torch.save(self.stack_data(), path)
         
     def _create_segment_iterator(self):
@@ -47,6 +57,7 @@ class CombinedProcessor(Dataset):
         
         Returns: An iterator that yields segments from the processor generators.
         '''
+        self.logger.debug('Creating segment iterator.')
         all_generators = (processor.process_data() for processor in self.processors)
         return chain.from_iterable(all_generators)
     
@@ -57,10 +68,11 @@ class CombinedProcessor(Dataset):
         
         Returns: The next segment from the processor generators.
         '''
+        self.logger.debug(f'Getting next segment')
         try:
             return next(self.segment_iterator)
         except StopIteration:
-            raise IndexError("Dataset is exhausted.")
+            return
     
     def __len__(self):
         '''
@@ -68,4 +80,5 @@ class CombinedProcessor(Dataset):
         '''
         # We use a nested sum to count the number of segments in each processor.
         # We use the sum method since we are using a generator.
+        self.logger.debug(f'Getting length of dataset.')
         return sum(sum(1 for _ in processor.process_data()) for processor in self.processors)
