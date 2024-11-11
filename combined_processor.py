@@ -21,9 +21,9 @@ class CombinedProcessor(Dataset):
         segment_iterator: An iterator that yields segments from the processor generators.
     '''
     def __init__(self, configs: List[EEGConfig], debug: bool = False):
+        self.logger = logging.getLogger(__name__)
         if debug:
             logging.basicConfig(level=logging.DEBUG)
-        self.logger = logging.getLogger(__name__)
         self.logger.debug('Creating CombinedProcessor and populating fields.')
 
         self.processors = [EEGProcessor(config) for config in configs]

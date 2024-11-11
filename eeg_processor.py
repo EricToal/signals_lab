@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import logging
 
-logging=logging.basicConfig(level=logging.INFO, format='%(name)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(name)s - %(message)s')
 
 class EEGProcessor:
     '''
@@ -18,12 +18,12 @@ class EEGProcessor:
         data: A dictionary containing EEG data for each subject, session, and run.
     '''
     def __init__(self, config: EEGConfig):
-        if config.debug:
-            logging.basicConfig(level=logging.DEBUG)
         self.logger = logging.getLogger(__name__)
-        self.logger.debug('Creating EEGProcessor and populating fields.')
-        
         self.config = config
+        if self.config.debug:
+            logging.basicConfig(level=logging.DEBUG)
+            
+        self.logger.debug('Creating EEGProcessor and populating fields.')
         self.data = self.config.dataset.get_data(subjects = [i for i in self.config.get_subject_range()])
     
     def process_data(self):
