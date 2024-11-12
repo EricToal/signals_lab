@@ -14,7 +14,7 @@ class EEGConfig:
     channel_range: Tuple[str, str]
     num_channels: int
     eeg_dim: int = 512
-    target_num_channels: int = 128
+    target_num_channels: int = 64
     expansion_factor: int = 1
     subject_range: Tuple[int, int] = (1, 1)
     filter_range: Tuple[int, int] = (5, 95)
