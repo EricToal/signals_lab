@@ -15,6 +15,5 @@ config1 = EEGConfig(
     num_channels=32,
     subject_range=(1, 5),
     filter_range=(5, 95),
-    channel_range=("Fp1", "PO10"),
-    debug=True
+    channel_range=("Fp1", "PO10")
 )
