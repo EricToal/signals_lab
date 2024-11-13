@@ -29,23 +29,21 @@ class EEGProcessor:
         
         Returns: A generator that yields processed EEG data.
         '''
-        subject = next(self._subject_gen())
-        subject_id = subject.keys()[0]
-        sessions = subject.values()[0]
-        self.logger.debug(f'Processing subject {subject_id}.')
+        for subject_id, sessions in next(self._subject_gen()).items():
+            self.logger.debug(f'Processing subject {subject_id}.')
 
-        for session_id, runs in sessions.items():
-            self.logger.debug(f'Processing session {session_id}.')
+            for session_id, runs in sessions.items():
+                self.logger.debug(f'Processing session {session_id}.')
 
-            for run_id, raw_data in runs.items():
-                self.logger.debug(f'Processing run {run_id}.')
+                for run_id, raw_data in runs.items():
+                    self.logger.debug(f'Processing run {run_id}.')
 
-                filtered_data = self._filter_data(raw_data)
-                extracted_channels = self._extract_channels(filtered_data)
-                reshaped_data = self._reshape_data(extracted_channels)
-                
-                for segment in reshaped_data:
-                    yield self._process_segment(segment)
+                    filtered_data = self._filter_data(raw_data)
+                    extracted_channels = self._extract_channels(filtered_data)
+                    reshaped_data = self._reshape_data(extracted_channels)
+                    
+                    for segment in reshaped_data:
+                        yield self._process_segment(segment)
     
     def gen_length(self, gen):
         '''
