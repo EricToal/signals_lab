@@ -7,7 +7,7 @@ from typing import List
 from itertools import chain
 import logging
 
-logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(name)s - %(message)s')
 
 class CombinedProcessor(Dataset):
     '''

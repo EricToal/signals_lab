@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import logging
 
-logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(name)s - %(message)s')
 
 class EEGProcessor:
     '''
