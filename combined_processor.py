@@ -7,7 +7,7 @@ from typing import List
 from itertools import chain
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(name)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(message)s')
 
 class CombinedProcessor(Dataset):
     '''
@@ -58,7 +58,7 @@ class CombinedProcessor(Dataset):
         Returns: An iterator that yields segments from the processor generators.
         '''
         self.logger.debug('Creating segment iterator.')
-        all_generators = (processor.process_data() for processor in self.processors)
+        all_generators = (processor.processed_data_gen() for processor in self.processors)
         return chain.from_iterable(all_generators)
     
     def __getitem__(self, idx):
@@ -72,13 +72,11 @@ class CombinedProcessor(Dataset):
         try:
             return next(self.segment_iterator)
         except StopIteration:
+            self.logger.info('No more data to process.')
             return
     
     def __len__(self):
         '''
         Returns: The total number of segments in the dataset.
         '''
-        # We use a nested sum to count the number of segments in each processor.
-        # We use the sum method since we are using a generator.
-        self.logger.debug(f'Getting length of dataset.')
-        return sum(sum(1 for _ in processor.process_data()) for processor in self.processors)
+        return sum(processor.length for processor in self.processors)

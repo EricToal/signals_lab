@@ -1,9 +1,10 @@
 from eeg_config import EEGConfig
+from itertools import tee
 import numpy as np
 import torch
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(name)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(message)s')
 
 class EEGProcessor:
     '''
@@ -20,37 +21,49 @@ class EEGProcessor:
     def __init__(self, config: EEGConfig):
         self.logger = logging.getLogger(__name__)
         self.config = config
-        if self.config.debug:
-            logging.basicConfig(level=logging.DEBUG)
-            
-        self.logger.debug('Creating EEGProcessor and populating fields.')
-        self.data = self.config.dataset.get_data(subjects = [i for i in self.config.get_subject_range()])
+        self.length = self.gen_length(self.processed_data_gen())
     
-    def process_data(self):
+    def processed_data_gen(self):
         '''
         This method is the main entry point for processing EEG data.
         
         Returns: A generator that yields processed EEG data.
         '''
-        for subject_id, sessions in self.data.items():
-            # Allow for early stopping so that we can limit range of subjects.
-            if subject_id not in range(self.config.subject_range[0], self.config.subject_range[1] + 1):
-                break
+        subject = next(self._subject_gen())
+        subject_id = subject.keys()[0]
+        sessions = subject.values()[0]
+        self.logger.debug(f'Processing subject {subject_id}.')
 
-            self.logger.debug(f'Processing subject {subject_id}.')
+        for session_id, runs in sessions.items():
+            self.logger.debug(f'Processing session {session_id}.')
 
-            for session_id, runs in sessions.items():
-                self.logger.debug(f'Processing session {session_id}.')
+            for run_id, raw_data in runs.items():
+                self.logger.debug(f'Processing run {run_id}.')
 
-                for run_id, raw_data in runs.items():
-                    self.logger.debug(f'Processing run {run_id}.')
-
-                    filtered_data = self._filter_data(raw_data)
-                    extracted_channels = self._extract_channels(filtered_data)
-                    reshaped_data = self._reshape_data(extracted_channels)
-                    
-                    for segment in reshaped_data:
-                        yield self._process_segment(segment)
+                filtered_data = self._filter_data(raw_data)
+                extracted_channels = self._extract_channels(filtered_data)
+                reshaped_data = self._reshape_data(extracted_channels)
+                
+                for segment in reshaped_data:
+                    yield self._process_segment(segment)
+    
+    def gen_length(self, gen):
+        '''
+        This method calculates the length of a generator.
+        
+        Args:
+            gen: The generator to calculate the length of.
+            
+        Returns: The length of the generator.
+        '''
+        self.logger.debug('Calculating generator length.')
+        gen, gen_copy = tee(gen)
+        length = sum(1 for _ in gen_copy)
+        return length
+    
+    def _subject_gen(self):
+        for subject in self.config.get_subject_range():
+            yield self.config.dataset.get_data(subjects=[subject])
                         
     def _filter_data(self, raw_data):
         '''
@@ -113,3 +126,6 @@ class EEGProcessor:
             '''
         self.logger.debug('Processing segment.')
         return torch.Tensor(segment).repeat(1, self.config.expansion_factor).unsqueeze(0)
+    
+    def __len__(self):
+        return self.length
