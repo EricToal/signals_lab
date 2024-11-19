@@ -1,7 +1,7 @@
 {
-  "name": "dd_experiments",
+  "name": "signals_lab",
   "build": { "dockerfile": "Dockerfile" },
-  "workspaceFolder": "/workspaces/dd_experiments",
+  "workspaceFolder": "/workspaces/signals_lab",
   "customizations": {
     "vscode": {
       "settings": { 

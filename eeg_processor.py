@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(name)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(message)s')
 
 class EEGProcessor:
     '''
@@ -40,10 +40,10 @@ class EEGProcessor:
 
                     filtered_data = self._filter_data(raw_data)
                     extracted_channels = self._extract_channels(filtered_data)
-                    reshaped_data = self._reshape_data(extracted_channels)
+                    #reshaped_data = self._reshape_data(extracted_channels)
                     
-                    for segment in reshaped_data:
-                        yield self._process_segment(segment)
+                    for segment in self._process_segment(extracted_channels):
+                        yield segment
     
     def gen_length(self, gen):
         '''
@@ -107,23 +107,29 @@ class EEGProcessor:
         eeg_dim = self.config.eeg_dim
         self.logger.debug(f'Reshaping data into segments of {eeg_dim} samples.')
         num_chunks = extracted_channels.shape[0] // self.config.eeg_dim
+        self.logger.debug(f'Extracted {num_chunks} segments.')
         
         return extracted_channels[:num_chunks * eeg_dim] \
-            .reshape(-1, eeg_dim, self.config.num_channels)
+            .reshape(self.config.num_channels, eeg_dim)
 
-    def _process_segment(self, segment):
-        '''
-        This method processes a single EEG data segment.
+    def _process_segment(self, extracted_channels):
         
-        Args:
-            segment: The EEG data segment to process. This should have been
-                     segmented and reshaped by the _reshape_data method.
-                     
-        Returns:
-            A tensor containing the processed EEG data segment.
-            '''
-        self.logger.debug('Processing segment.')
-        return torch.Tensor(segment).repeat(1, self.config.expansion_factor).unsqueeze(0)
+        eeg_dim = self.config.eeg_dim
+        num_channels = self.config.num_channels
+        self.logger.debug(f'Reshaping data into segments of {eeg_dim} samples.')
+        
+        total_elements = extracted_channels.shape[0]
+        self.logger.debug(f'Total elements in extracted channels: {total_elements}.')
+        
+        num_segments = total_elements // eeg_dim
+        self.logger.debug(f'Extracted {num_segments} complete segments.')
+        
+        for i in range(num_segments):
+            start = i * eeg_dim
+            end = start + eeg_dim
+            segment = extracted_channels[start:end]
+            yield segment.reshape(num_channels, eeg_dim)
+        
     
     def __len__(self):
         return self.length
