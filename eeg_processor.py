@@ -1,4 +1,4 @@
-from eeg_config import EEGConfig
+from .eeg_config import EEGConfig
 from itertools import tee
 import numpy as np
 import torch
@@ -40,7 +40,7 @@ class EEGProcessor:
 
                     filtered_data = self._filter_data(raw_data)
                     extracted_channels = self._extract_channels(filtered_data)
-                    #reshaped_data = self._reshape_data(extracted_channels)
+                    #reshaped_data = self._reshape_data(extracted_channels) Data reshaped in _process_segment
                     
                     for segment in self._process_segment(extracted_channels):
                         yield segment
@@ -113,23 +113,48 @@ class EEGProcessor:
             .reshape(self.config.num_channels, eeg_dim)
 
     def _process_segment(self, extracted_channels):
+        """
+        Processes and reshapes EEG data into segments of size (num_channels, eeg_dim),
+        with zero padding for incomplete segments.
         
+        Args:
+            extracted_channels: The input EEG data with all channels concatenated.
+
+        Yields:
+            Segments of size (num_channels, eeg_dim).
+        """
         eeg_dim = self.config.eeg_dim
         num_channels = self.config.num_channels
-        self.logger.debug(f'Reshaping data into segments of {eeg_dim} samples.')
+
+        # Confirm the shape of extracted_channels
+        n_samples, n_channels = extracted_channels.shape
+        if n_channels != num_channels:
+            raise ValueError(f"Mismatch in number of channels: expected {num_channels}, got {n_channels}.")
         
-        total_elements = extracted_channels.shape[0]
-        self.logger.debug(f'Total elements in extracted channels: {total_elements}.')
         
-        num_segments = total_elements // eeg_dim
-        self.logger.debug(f'Extracted {num_segments} complete segments.')
-        
-        for i in range(num_segments):
-            start = i * eeg_dim
-            end = start + eeg_dim
-            segment = extracted_channels[start:end]
-            yield segment.reshape(num_channels, eeg_dim)
-        
+        segment_size = eeg_dim
+        self.logger.debug(f"Reshaping data into segments of {eeg_dim} samples per channel.")
+
+        # Calculate the number of complete segments
+        total_segments = (n_samples + segment_size - 1) // segment_size
+        self.logger.debug(f"Extracting {total_segments} segments with zero padding for the last one if needed.")
+
+        for i in range(total_segments):
+            start = i * segment_size
+            end = min(start + segment_size, n_samples)
+
+            # Slice the segment
+            segment = extracted_channels[start:end, :]
+
+            # Apply zero padding if the segment is incomplete
+            if segment.shape[0] < segment_size:
+                self.logger.debug(f"Zero padding segment {i + 1}: original size {segment.shape}.")
+                padded_segment = np.zeros((segment_size, num_channels), dtype=extracted_channels.dtype)
+                padded_segment[:segment.shape[0], :] = segment
+                segment = padded_segment
+
+            yield segment.T  # Transpose to (num_channels, eeg_dim)
+
     
     def __len__(self):
         return self.length

@@ -1,5 +1,5 @@
-from eeg_config import EEGConfig
-from eeg_processor import EEGProcessor
+from .eeg_config import EEGConfig
+from .eeg_processor import EEGProcessor
 
 from torch.utils.data import Dataset
 import torch

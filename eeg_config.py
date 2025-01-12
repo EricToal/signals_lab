@@ -13,11 +13,14 @@ class EEGConfig:
     dataset: object
     channel_range: Tuple[str, str]
     num_channels: int
+    sample_rate: int
+    sample_duration: int
     eeg_dim: int = 512
     target_num_channels: int = 64
     expansion_factor: int = 1
     subject_range: Tuple[int, int] = (1, 1)
     filter_range: Tuple[int, int] = (5, 95)
+    
     debug: bool = False
 
     
