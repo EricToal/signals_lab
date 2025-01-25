@@ -1,0 +1,26 @@
+name: signals_lab
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - matplotlib
+  - numpy
+  - pandas
+  - pytorch
+  - torchvision
+  - torchaudio 
+  - tqdm
+  - ipykernel
+  - monai
+  - pytorch-lightning
+  - scikit-learn
+  - seaborn
+  - timm
+  - librosa
+  - ipython
+  - scipy
+  - pip
+  - pip:
+      - moabb
+      - torchsummary

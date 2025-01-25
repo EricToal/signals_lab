@@ -6,3 +6,12 @@ tqdm
 moabb
 ipykernel
 monai
+pytorch-lightning
+scikit-learn
+seaborn
+timm
+tqdm
+librosa
+ipython
+scipy
+torchvision

@@ -30,6 +30,7 @@ class CombinedProcessor(Dataset):
         self.segment_iterator = self._create_segment_iterator()
         self.dir = './'
         self.filename = 'complete_dataset_tensor.pth'
+        self.expected_shape = (configs[0].num_channels, configs[0].eeg_dim)
         
     def stack_data(self):
         '''
@@ -72,8 +73,8 @@ class CombinedProcessor(Dataset):
         try:
             return next(self.segment_iterator)
         except StopIteration:
-            self.logger.info('No more data to process.')
-            return
+            self.logger.debug('No more data to process.')
+            return torch.zeros(self.expected_shape, dtype=torch.float32)
     
     def __len__(self):
         '''

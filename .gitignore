@@ -1,1 +1,11 @@
 __pycache__
+run
+lightning_logs
+.ipynb_checkpoints
+custom_transforms.py
+spectrogram_pure.py
+src/SavedModels
+src/Dataset.py
+src/Classifier.py
+src/Transformer.py
+src/TransformerMonai.py

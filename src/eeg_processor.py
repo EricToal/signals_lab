@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import logging
 
-logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(name)s - %(message)s')
 
 class EEGProcessor:
     '''
@@ -29,21 +29,22 @@ class EEGProcessor:
         
         Returns: A generator that yields processed EEG data.
         '''
-        for subject_id, sessions in next(self._subject_gen()).items():
-            self.logger.debug(f'Processing subject {subject_id}.')
+        for subject_data in self._subject_gen():
+            # Each subject_data is a dict: {subject_id: {sessions...}}
+            for subject_id, sessions in subject_data.items():
+                self.logger.debug(f'Processing subject {subject_id}.')
+    
+                for session_id, runs in sessions.items():
+                    self.logger.debug(f'Processing session {session_id}.')
 
-            for session_id, runs in sessions.items():
-                self.logger.debug(f'Processing session {session_id}.')
-
-                for run_id, raw_data in runs.items():
-                    self.logger.debug(f'Processing run {run_id}.')
-
-                    filtered_data = self._filter_data(raw_data)
-                    extracted_channels = self._extract_channels(filtered_data)
-                    #reshaped_data = self._reshape_data(extracted_channels) Data reshaped in _process_segment
-                    
-                    for segment in self._process_segment(extracted_channels):
-                        yield segment
+                    for run_id, raw_data in runs.items():
+                        self.logger.debug(f'Processing run {run_id}.')
+    
+                        filtered_data = self._filter_data(raw_data)
+                        extracted_channels = self._extract_channels(filtered_data)
+                        
+                        for segment in self._process_segment(extracted_channels):
+                            yield segment
     
     def gen_length(self, gen):
         '''
@@ -61,6 +62,7 @@ class EEGProcessor:
     
     def _subject_gen(self):
         for subject in self.config.get_subject_range():
+            print(subject)
             yield self.config.dataset.get_data(subjects=[subject])
                         
     def _filter_data(self, raw_data):
