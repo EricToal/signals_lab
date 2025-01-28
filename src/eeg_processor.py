@@ -62,7 +62,6 @@ class EEGProcessor:
     
     def _subject_gen(self):
         for subject in self.config.get_subject_range():
-            print(subject)
             yield self.config.dataset.get_data(subjects=[subject])
                         
     def _filter_data(self, raw_data):

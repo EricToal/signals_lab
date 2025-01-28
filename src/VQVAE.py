@@ -231,6 +231,19 @@ class VQVAE(pl.LightningModule):
         self.log("loss",loss,on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         return recon_loss
+
+    def validation_step(self, batch, batch_idx):
+        x = batch
+        x = x.float()
+        x_hat, ze, zq, indices, KL_loss, commit_Loss = self(x) 
+        
+        dims = np.prod(x_hat.shape[1:])
+        recon_loss = F.mse_loss(x, x_hat, reduction='none').sum(dim=(1,2)).mean()
+        loss = recon_loss/dims + self.KL_coeff * KL_loss/dims + self.CL_coeff * commit_Loss/dims
+        
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        
+        return recon_loss
         
     def decode(self, z_q):
         with torch.no_grad():

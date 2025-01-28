@@ -5,8 +5,6 @@ from src.utils import *
 
 from torch.utils.data import DataLoader, random_split
 from moabb.datasets import Lee2019_SSVEP, BI2015b
-from moabb.utils import set_download_dir
-from mne import set_config
 from torch import save
 import matplotlib.pyplot as plt
 
@@ -30,10 +28,11 @@ if __name__ == '__main__':
         channel_range=("Fp1", "PO10")
     )
     configs = [lee_config, invaders_config]
+    n_fft = 512
 
         
-    combined_processor = CombinedProcessor(configs=configs)
-    train_set, val_set = random_split(combined_processor, [.8, .2])
+    combined_processor = CombinedProcessor(configs=configs, nperseg = n_fft/2, noverlap = n_fft/4, window='hann')
+    train_set, val_set = random_split(combined_processor, [.7, .3])
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
     
@@ -46,9 +45,15 @@ if __name__ == '__main__':
     classes = [],
     in_channels = lee_config.num_channels)
 
-    training_logs = trainer.logged_metrics
+    train_loss = trainer.logged_metrics['loss_epoch']
+    val_loss = trainer.logged_metrics['val_loss']
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_loss, label='Training Loss')
+    plt.plot(val_loss, label='Validation Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
-    plt.title('Loss')
-    plt.plot(training_logs['loss_epoch'])
+    plt.legend()
+    plt.savefig('loss_curves.png')
+    plt.close()
     save(model,VQVAE_PATH)

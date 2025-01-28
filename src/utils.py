@@ -1,7 +1,7 @@
 device = 'cuda:0'
 devices = [1]
 
-epochs = 100
+epochs = 30
 
 input_feat_dim=2
 enc_hidden_dim=16
