@@ -18,10 +18,11 @@ class EEGProcessor:
         config: An EEGConfig object containing configuration settings.
         data: A dictionary containing EEG data for each subject, session, and run.
     '''
-    def __init__(self, config: EEGConfig):
+    def __init__(self, config: EEGConfig, target_num_channels: int):
         self.logger = logging.getLogger(__name__)
         self.config = config
-        self.length = self.gen_length(self.processed_data_gen())
+        self.target_num_channels = target_num_channels
+        self.length = self.gen_length(self.processed_data_gen())    
     
     def processed_data_gen(self):
         '''
@@ -42,8 +43,9 @@ class EEGProcessor:
     
                         filtered_data = self._filter_data(raw_data)
                         extracted_channels = self._extract_channels(filtered_data)
+                        padded_channels = self._pad_channels(extracted_channels)
                         
-                        for segment in self._process_segment(extracted_channels):
+                        for segment in self._process_segment(padded_channels):
                             yield segment
     
     def gen_length(self, gen):
@@ -95,23 +97,27 @@ class EEGProcessor:
             .loc[:, self.config.channel_range[0]:self.config.channel_range[1]] \
             .values
 
-    def _reshape_data(self, extracted_channels):
+    def _pad_channels(self, extracted_channels):
         '''
-        This method segments and reshapes extracted EEG data.
+        Pads the channels by repeating existing channels to reach target_num_channels.
         
         Args:
-            extracted_channels: The extracted EEG data to segment and reshape.
+            extracted_channels: Numpy array of shape (n_samples, n_channels).
             
         Returns:
-            A reshaped numpy array containing segmented EEG data.
+            Padded array with shape (n_samples, target_num_channels).
         '''
-        eeg_dim = self.config.eeg_dim
-        self.logger.debug(f'Reshaping data into segments of {eeg_dim} samples.')
-        num_chunks = extracted_channels.shape[0] // self.config.eeg_dim
-        self.logger.debug(f'Extracted {num_chunks} segments.')
-        
-        return extracted_channels[:num_chunks * eeg_dim] \
-            .reshape(self.config.num_channels, eeg_dim)
+        current_channels = extracted_channels.shape[1]
+        target = self.target_num_channels
+
+        if current_channels == target:
+            return extracted_channels
+
+        repeats = (target + current_channels - 1) // current_channels  # Ceiling division
+        padded = np.tile(extracted_channels, (1, repeats))
+        padded = padded[:, :target]
+        self.logger.debug(f"Padded channels from {current_channels} to {target} by repeating {repeats} times.")
+        return padded
 
     def _process_segment(self, extracted_channels):
         """
@@ -125,7 +131,7 @@ class EEGProcessor:
             Segments of size (num_channels, eeg_dim).
         """
         eeg_dim = self.config.eeg_dim
-        num_channels = self.config.num_channels
+        num_channels = self.target_num_channels
 
         # Confirm the shape of extracted_channels
         n_samples, n_channels = extracted_channels.shape

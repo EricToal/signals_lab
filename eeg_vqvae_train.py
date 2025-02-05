@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 if __name__ == '__main__':
     lee_config = EEGConfig(
         dataset=Lee2019_SSVEP(),
-        num_channels=32,
+        num_channels=62,
         sample_rate=1000,
         sample_duration=4,
         subject_range=(1, 5),
@@ -43,17 +43,6 @@ if __name__ == '__main__':
     train_bool = True,
     eff_net_PATH = eff_net_PATH,
     classes = [],
-    in_channels = lee_config.num_channels)
-
-    train_loss = trainer.logged_metrics['loss_epoch']
-    val_loss = trainer.logged_metrics['val_loss']
+    in_channels = combined_processor.target_num_channels)
     
-    plt.figure(figsize=(10, 6))
-    plt.plot(train_loss, label='Training Loss')
-    plt.plot(val_loss, label='Validation Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.savefig('loss_curves.png')
-    plt.close()
     save(model,VQVAE_PATH)

@@ -9,3 +9,5 @@ src/Dataset.py
 src/Classifier.py
 src/Transformer.py
 src/TransformerMonai.py
+logs
+spectrogram_pure.ipynb

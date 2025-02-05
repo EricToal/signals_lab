@@ -31,7 +31,9 @@ class CombinedProcessor(Dataset):
         self.logger = logging.getLogger(__name__)
         self.logger.debug('Creating CombinedProcessor and populating fields.')
 
-        self.processors = [EEGProcessor(config) for config in configs]
+        self.configs = configs
+        self.target_num_channels = self._calculate_target_channels()
+        self.processors = [EEGProcessor(config, self.target_num_channels) for config in configs]
         self.segment_iterator = self._create_segment_iterator()
         self.dir = './'
         self.filename = 'complete_dataset_tensor.pth'
@@ -63,24 +65,27 @@ class CombinedProcessor(Dataset):
 
     def compute_spectrograms(self, segment: np.ndarray, sample_rate: int) -> np.ndarray:
         """
-        Compute spectrograms matching notebook's axis order.
-        Returns:
-            spectrograms: [Channels, Freq, Time] (no channel dim)
+        Compute spectrograms matching the correct axis order [Channels, Freq, Time].
         """
         num_channels = segment.shape[0]
         spectrograms = []
         
         for channel in range(num_channels):
-            f, t, Zxx = stft(segment, sample_rate/2, nperseg=self.nperseg, noverlap=self.noverlap, window=self.window)
-            Zxx_truncated = Zxx[:128, :-1]
-            magnitude = np.abs(Zxx_truncated)
-            db_scale = librosa.amplitude_to_db(magnitude, ref=np.max)
-            db_scale = db_scale.T
-            db_scale = np.squeeze(db_scale)
+            channel_data = segment[channel, :]
+            f, t, Zxx = stft(
+                channel_data,
+                fs=sample_rate,
+                nperseg=self.nperseg,
+                noverlap=self.noverlap,
+                window=self.window
+            )
             
-            spectrograms.append(db_scale) 
+            magnitude = np.abs(Zxx)
+            db_scale = librosa.amplitude_to_db(magnitude, ref=np.max)
+            spectrograms.append(db_scale)
         
-        return np.stack(spectrograms, axis=0) 
+        # Stack to shape [Channels, Freq, Time]
+        return np.stack(spectrograms, axis=0)
 
     def compare_spectrograms(self, original: np.ndarray, reconstructed: np.ndarray) -> np.ndarray:
         """
@@ -114,20 +119,18 @@ class CombinedProcessor(Dataset):
             requested_channels: Number of channels to visualize
         """
     
-        # Plot spectrogram comparison
         fig, axes = plt.subplots(requested_channels, 2, figsize=(15, 3 * requested_channels))
         
         if requested_channels == 1:
-            axes = axes[np.newaxis, :]  # Maintain 2D axes array
+            axes = axes[np.newaxis, :]
     
         for ch in range(requested_channels):
             original_squeezed = np.squeeze(original[ch]) 
             reconstructed_squeezed = np.squeeze(reconstructed[ch])
     
-            # Original spectrogram
             librosa.display.specshow(
                 original_squeezed, 
-                sr=sample_rate // 2, 
+                sr=sample_rate, 
                 hop_length=self.noverlap, 
                 x_axis='time', 
                 y_axis='hz', 
@@ -135,10 +138,9 @@ class CombinedProcessor(Dataset):
             )
             axes[ch, 0].set_title(f'Original (Ch {ch+1})')
             
-            # Reconstructed spectrogram
             librosa.display.specshow(
                 reconstructed_squeezed, 
-                sr=sample_rate // 2, 
+                sr=sample_rate, 
                 hop_length=self.noverlap, 
                 x_axis='time', 
                 y_axis='hz', 
@@ -158,6 +160,24 @@ class CombinedProcessor(Dataset):
         self.logger.debug('Creating segment iterator.')
         all_generators = (processor.processed_data_gen() for processor in self.processors)
         return chain.from_iterable(all_generators)
+
+    def _calculate_target_channels(self):
+        '''
+        Returns the smallest power of two greater than or equal to the largest
+        number of channels in the configs.
+        '''
+        max_channels = max([config.num_channels for config in self.configs])
+        
+        if max_channels == 0:
+            return 1
+        max_channels -= 1
+        max_channels |= max_channels >> 1
+        max_channels |= max_channels >> 2
+        max_channels |= max_channels >> 4
+        max_channels |= max_channels >> 8
+        max_channels |= max_channels >> 16
+        max_channels += 1
+        return max_channels
     
     def __getitem__(self, idx):
         '''

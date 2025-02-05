@@ -241,7 +241,7 @@ class VQVAE(pl.LightningModule):
         recon_loss = F.mse_loss(x, x_hat, reduction='none').sum(dim=(1,2)).mean()
         loss = recon_loss/dims + self.KL_coeff * KL_loss/dims + self.CL_coeff * commit_Loss/dims
         
-        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         
         return recon_loss
         
