@@ -31,7 +31,7 @@ if __name__ == '__main__':
     n_fft = 512
 
         
-    combined_processor = CombinedProcessor(configs=configs, nperseg = n_fft/2, noverlap = n_fft/4, window='hann')
+    combined_processor = CombinedProcessor(configs=configs)
     train_set, val_set = random_split(combined_processor, [.7, .3])
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)

@@ -22,27 +22,39 @@ class CombinedProcessor(Dataset):
     
     Args:
         configs: A list of EEGConfig objects containing settings for the processors.
+        nperseg: Number of data points per segment when creating spectrograms.
+        noverlap: Number of datapoints which overlap on consecutive segments when creating spectrograms.
+        window: Window function to be used when creating spectrograms.
         
     Attributes:
         processors: A list of EEGProcessor objects.
         segment_iterator: An iterator that yields segments from the processor generators.
     '''
-    def __init__(self, configs: List[EEGConfig], nperseg: int, noverlap: int, window="hann"):
+    def __init__(self, configs: List[EEGConfig], nperseg=0, noverlap=0, window='hann', labels_path=None):
         self.logger = logging.getLogger(__name__)
         self.logger.debug('Creating CombinedProcessor and populating fields.')
 
         self.configs = configs
         self.target_num_channels = self._calculate_target_channels()
         self.processors = [EEGProcessor(config, self.target_num_channels) for config in configs]
-        self.segment_iterator = self._create_segment_iterator()
-        self.dir = './'
-        self.filename = 'complete_dataset_tensor.pth'
+        
         self.expected_shape = (configs[0].num_channels, configs[0].eeg_dim)
+        
         self.nperseg = nperseg
         self.noverlap = noverlap
         self.window = window
         self.max_spectr_channels = max(config.num_channels for config in configs)
         
+        self.dir = './'
+        self.filename = 'complete_dataset_tensor.pth'
+        
+        if labels_path:
+            self.labels = torch.load(labels_path)
+            self.segment_iterator = torch.stack([torch.tensor(segment) for segment in self._create_segment_iterator()])
+        else:
+            self.labels = None
+            self.segment_iterator = self._create_segment_iterator()
+            
     def stack_data(self):
         '''
         This method stacks all processed EEG data into a single tensor.
@@ -188,7 +200,10 @@ class CombinedProcessor(Dataset):
         '''
         self.logger.debug(f'Getting next segment')
         try:
-            return next(self.segment_iterator)
+            if self.labels is not None:
+                return self.segment_iterator[idx], self.labels[idx]
+            else:
+                return next(self.segment_iterator)
         except StopIteration:
             self.logger.debug('No more data to process.')
             return torch.zeros(self.expected_shape, dtype=torch.float32)
