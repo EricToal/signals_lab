@@ -30,7 +30,7 @@ class CombinedProcessor(Dataset):
         processors: A list of EEGProcessor objects.
         segment_iterator: An iterator that yields segments from the processor generators.
     '''
-    def __init__(self, configs: List[EEGConfig], nperseg=0, noverlap=0, window='hann', labels_path=None):
+    def __init__(self, configs: List[EEGConfig], nperseg=0, noverlap=0, window='hann', labels_path=None, subset_labels=False):
         self.logger = logging.getLogger(__name__)
         self.logger.debug('Creating CombinedProcessor and populating fields.')
 
@@ -47,8 +47,10 @@ class CombinedProcessor(Dataset):
         
         self.dir = './'
         self.filename = 'complete_dataset_tensor.pth'
-        
-        if labels_path:
+
+        if subset_labels:
+            self.segment_iterator, self.labels = self.stack_data()
+        elif labels_path:
             self.labels = torch.load(labels_path)
             self.segment_iterator = torch.stack([torch.tensor(segment) for segment in self._create_segment_iterator()])
         else:
@@ -57,12 +59,21 @@ class CombinedProcessor(Dataset):
             
     def stack_data(self):
         '''
-        This method stacks all processed EEG data into a single tensor.
-        
-        Returns: A tensor containing all processed EEG data.
         '''
         self.logger.debug('Stacking all processed EEG data.')
-        return torch.vstack(list(self.segment_iterator))
+        
+        all_segments = []
+        all_labels = []
+
+        for dataset_idx, processor in enumerate(self.processors):
+            dataset_label = torch.tensor([dataset_idx], dtype=torch.long)
+            for segment in processor.processed_data_gen():
+                all_segments.append(torch.tensor(segment))
+                all_labels.append(dataset_label)
+
+        stacked_data = torch.stack(all_segments)
+        stacked_labels = torch.stack(all_labels)
+        return stacked_data, stacked_labels
     
     def save_data(self, path):
         '''
@@ -75,6 +86,35 @@ class CombinedProcessor(Dataset):
         self.logger.debug(f'Saving data to {path}.')
         torch.save(self.stack_data(), path)
 
+    def generate_labels(self, labels_path: str, cluster_method: callable):
+        '''
+        Generates labels using the provided clustering method and saves them.
+
+        Args:
+            labels_path: Path to save the generated labels.
+            clustering_method: A clustering function that takes in a tensor of data
+                                          and returns a tensor of labels.
+        '''
+        data = torch.stack([torch.tensor(segment) for segment in self.segment_iterator])
+        data_np = data.numpy()
+        data_reshaped = data_np.reshape(data_np.shape[0], -1)
+        labels = cluster_method(data_reshaped)
+        labels = torch.tensor(labels, dtype=torch.long)
+        
+        torch.save(labels, labels_path) 
+        self.labels = labels
+        self.segment_iterator = data
+
+    def load_labels(self, labels_path: str):
+        '''
+        Loads labels from file at labels_path, and converts data from generated
+        segments to tensor.
+
+        Args:
+            labels_path: Path to load the labels from.
+        '''
+        self.labels = torch.load(labels_path)
+        
     def compute_spectrograms(self, segment: np.ndarray, sample_rate: int) -> np.ndarray:
         """
         Compute spectrograms matching the correct axis order [Channels, Freq, Time].
@@ -212,4 +252,7 @@ class CombinedProcessor(Dataset):
         '''
         Returns: The total number of segments in the dataset.
         '''
-        return sum(processor.length for processor in self.processors)
+        if self.labels is None:
+            return sum(processor.length for processor in self.processors)
+        else:
+            return len(self.labels)

@@ -14,22 +14,20 @@ if __name__ == '__main__':
         num_channels=62,
         sample_rate=1000,
         sample_duration=4,
-        subject_range=(1, 5),
+        subject_range=(1, 44),
         filter_range=(5, 95),
-        channel_range=("Fp1", "PO10")
+        channel_range=("Fp1", "PO4")
     )
     invaders_config = EEGConfig(
         dataset=BI2015b(),
         num_channels=32,
         sample_rate=512,
         sample_duration=1,
-        subject_range=(1, 5),
+        subject_range=(1, 44),
         filter_range=(5, 95),
         channel_range=("Fp1", "PO10")
     )
     configs = [lee_config, invaders_config]
-    n_fft = 512
-
         
     combined_processor = CombinedProcessor(configs=configs)
     train_set, val_set = random_split(combined_processor, [.7, .3])
